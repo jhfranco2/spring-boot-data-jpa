@@ -36,6 +36,22 @@ public class FacturaController {
 	private IClienteService clienteService;
 	
 	private final Logger log = LoggerFactory.getLogger(getClass());
+	
+	@GetMapping("/ver/{id}")
+	public String ver(@PathVariable(value="id") Long id, Model model, RedirectAttributes flash) {
+
+		Factura factura = clienteService.fetchFacturaByIdWithClienteWhithItemFacturaWithProducto(id); // clienteService.findFacturaById(id);
+
+		if(factura == null) {
+			flash.addFlashAttribute("error", "La factura no existe en la base de datos!");
+			return "redirect:/listar";
+		}
+		
+		model.addAttribute("factura", factura);
+		model.addAttribute("titulo", "Factura: ".concat(factura.getDescripcion()));
+		
+		return "factura/ver";
+	}
 
 	@GetMapping("/form/{clienteId}")
 	public String crear(@PathVariable(value = "clienteId") Long clienteId, Map<String, Object> model,
@@ -56,21 +72,6 @@ public class FacturaController {
 
 		return "factura/form";
 	}
-	@GetMapping("/ver/{id}")
-	public String ver(@PathVariable(value = "id") Long id,
-			Model model,
-			RedirectAttributes flash) {
-		Factura factura = clienteService.fetchFacturaByIdwithClienteswhithItemFacturaWithProducto(id);// clienteService.findFacturaById(id);
-		
-		if(factura == null) {
-			flash.addFlashAttribute("error", "La factura no existe en la base de datos");
-			return "redirect:/listar";
-		}
-		
-		model.addAttribute("factura", factura);
-		model.addAttribute("titulo", "Factura: ".concat(factura.getDescripcion()));
-		return "factura/ver";
-	}
 
 	@GetMapping(value = "/cargar-productos/{term}", produces = { "application/json" })
 	public @ResponseBody List<Producto> cargarProductos(@PathVariable String term) {
@@ -78,24 +79,24 @@ public class FacturaController {
 	}
 	
 	@PostMapping("/form")
-	public String guardar(@Valid Factura factura,
-			BindingResult result,
-			Model model,
+	public String guardar(@Valid Factura factura, 
+			BindingResult result, Model model,
 			@RequestParam(name = "item_id[]", required = false) Long[] itemId,
 			@RequestParam(name = "cantidad[]", required = false) Integer[] cantidad, 
 			RedirectAttributes flash,
 			SessionStatus status) {
+		
+		if (result.hasErrors()) {
+			model.addAttribute("titulo", "Crear Factura");
+			return "factura/form";
+		}
 
-		if(result.hasErrors()) {
-			model.addAttribute("titulo", "crear factura");
+		if (itemId == null || itemId.length == 0) {
+			model.addAttribute("titulo", "Crear Factura");
+			model.addAttribute("error", "Error: La factura NO puede no tener líneas!");
 			return "factura/form";
 		}
 		
-		if(itemId == null || itemId.length ==0) {
-			model.addAttribute("titulo", "Crear factura");
-			model.addAttribute("error","Error la factura no puede no tener lineas");
-			return "factura/form";
-		}
 		for (int i = 0; i < itemId.length; i++) {
 			Producto producto = clienteService.findProductoById(itemId[i]);
 
@@ -116,17 +117,16 @@ public class FacturaController {
 	}
 	
 	@GetMapping("/eliminar/{id}")
-	public String eliminar(@PathVariable(value="id") Long id,
-			RedirectAttributes flash) {
+	public String eliminar(@PathVariable(value="id") Long id, RedirectAttributes flash) {
 		
 		Factura factura = clienteService.findFacturaById(id);
 		
 		if(factura != null) {
 			clienteService.deleteFactura(id);
-			flash.addFlashAttribute("success", "factura eliminada con exito");
+			flash.addFlashAttribute("success", "Factura eliminada con éxito!");
 			return "redirect:/ver/" + factura.getCliente().getId();
 		}
-		flash.addFlashAttribute("error", "la factura no existe en la base de datos, no se pudo eliminar");
+		flash.addFlashAttribute("error", "La factura no existe en la base de datos, no se pudo eliminar!");
 		
 		return "redirect:/listar";
 	}
