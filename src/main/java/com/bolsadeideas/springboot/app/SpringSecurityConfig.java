@@ -30,7 +30,8 @@ public class SpringSecurityConfig extends WebSecurityConfigurerAdapter{
 		.antMatchers("/factura/**").hasAnyRole("ADMIN")
 		.anyRequest().authenticated()
 		.and()
-		.formLogin().permitAll()
+		.formLogin().loginPage("/login")
+		.permitAll()
 		.and()
 		.logout().permitAll();
 	}
@@ -44,7 +45,7 @@ public class SpringSecurityConfig extends WebSecurityConfigurerAdapter{
 		
 		builder.inMemoryAuthentication()
 		.withUser(users.username("admin").password("12345").roles("ADMIN","USER"))
-		.withUser(users.username("ANDRES").password("12345").roles("USER"));
+		.withUser(users.username("andres").password("12345").roles("USER"));
 		
 		
 	}
